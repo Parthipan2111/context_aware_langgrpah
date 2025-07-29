@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 
 from graph.build_dynamic_graph import register_agent
 from shared import MultiAgentState
+from shared.session_model import AgentSlots, SessionState
 from .prompt import INTENT_PROMPT_TEMPLATE
 from langchain_groq import ChatGroq
 
@@ -44,32 +45,49 @@ def classify_intent(user_input: str) -> str:
 def update_state_with_intent(state: MultiAgentState, intents: list[str]) -> MultiAgentState:
     """ Initialize the state for intent recognition.
     """
-    # 3. Initialize agent_state for all detected agents
-    state.setdefault("agent_state", {})
+    session: SessionState = state["session"]
+
     for intent in intents:
-        if intent not in state["agent_state"]:
+        # Initialize default slots depending on intent
+        if intent not in session.agent_state:
             if intent == "dispute_payment_support":
-                default_slots = {"transaction_date": None, "amount": None,"user_final_confirmation": None}
+                default_slots = {
+                    "transaction_date": None,
+                    "amount": None,
+                    "user_final_confirmation": None,
+                }
             elif intent == "service_ticket_enquiry":
                 default_slots = {"service_ticket_id": None}
             elif intent == "card_management":
-                default_slots = {"last_four_digits_card_number": None, "reason": None,"user_final_confirmation": None}
+                default_slots = {
+                    "last_four_digits_card_number": None,
+                    "reason": None,
+                    "user_final_confirmation": None,
+                }
             elif intent == "get_account_info":
                 default_slots = {"account_type": None}
             elif intent == "transaction_history":
-                default_slots = {"period_in_days": None}
+                default_slots = {"no_of_days": None}
             else:
                 default_slots = {}
-            state["agent_state"][intent] = {"slots": default_slots}
 
-    # 4. Prepare pending_agents list (all parallel)
-    state["pending_agents"] = [{"name": intent, "mode": "parallel"} for intent in intents]
+            # Use AgentSlots model
+            session.agent_state[intent] = AgentSlots(slots=default_slots)
 
-    # If only one agent, we can set active_agent; otherwise, leave None
-    state["active_agent"] = intents[0] if len(intents) == 1 else None
-    state["intent"] = intents if len(intents) > 1 else intents[0]
-    session = state["session"]
-    session.history.append(
-            {"role": "system", "content": f"Found the intent for query as: {intents}"}
-        )
+    # Prepare pending_agents as a list of dicts
+    session.pending_agents = [{"name": intent, "mode": "parallel"} for intent in intents]
+
+    # If single intent, set active_agent
+    session.active_agent = intents[0] if len(intents) == 1 else None
+
+    # Save intent(s)
+    session.intent = intents
+
+    # Log in history
+    session.add_message(
+        role="system",
+        content=f"Found the intent for query as: {intents}",
+    )
+
+    # Return the updated MultiAgentState
     return state

@@ -55,6 +55,10 @@ def clean_up_content(content: str) -> str:
 def get_embedding(text):
     if not embedding_model:
         raise ValueError("Embedder is not initialized. Check your OpenAI API key.")
+    if isinstance(text, list):
+        if not all(isinstance(t, str) for t in text):
+            raise ValueError("All items in the list must be strings.")
+        text = " ".join(text)
     return embedding_model.embed_query(text)
 
 

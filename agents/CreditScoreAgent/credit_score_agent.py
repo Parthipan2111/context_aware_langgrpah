@@ -1,7 +1,7 @@
 from langchain.agents import Tool, initialize_agent, AgentType
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from shared.MultiAgentState import MultiAgentState
-from tools import get_credit_data, get_user_profile
+from .tools import get_credit_data, get_user_profile
 from graph.build_dynamic_graph import register_agent
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain.agents import AgentExecutor, create_openai_functions_agent,Tool

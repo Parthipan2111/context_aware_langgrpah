@@ -1,4 +1,5 @@
 from api.chat_model import ChatRequest
+from utils.merge_result import combine_agent_responses
 from utils.session_store import load_session
 from graph.build_dynamic_graph import build_graph
 from utils.utils import get_incomplete_agent_plan
@@ -7,8 +8,8 @@ from shared.session_model import SessionState
 from vector_db.chroma_utils import persist_user_messages_to_chroma
 from agents.IntentRecognitionAgent.intent_recognition_agent import intent_recognition_node
 from agents.ContextEnrichmentAgent.context_enrich_agent import context_enrichment_agent
-from agents.AccountInsightAgent.account_insight_agent import account_insight_node
 from agents.CreditScoreAgent.credit_score_agent import credit_score_node
+from agents.TransactionHistoryAgent.tran_agent import transaction_history_agent
 from utils.session_store import save_session
 
 
@@ -41,6 +42,9 @@ def run_langgraph(request: ChatRequest):
     # ---- 1. Resume incomplete workflow if any ----
     incomplete_plan = get_incomplete_agent_plan(multi_state)
 
+    if not incomplete_plan and state:
+        return combine_agent_responses(session_obj)
+
     if incomplete_plan:
         agents_to_run = [{"name": state["active_agent"], "mode": "sequential"}]
         graph = build_graph(agents_to_run)
@@ -59,18 +63,20 @@ def run_langgraph(request: ChatRequest):
         multi_state_output = phase1_graph.invoke(multi_state)
 
     # ---- 3. Run downstream agents returned by intent ----
-    agents_to_run = multi_state_output.get("pending_agents", [])
+    agents_to_run = multi_state_output["session"].pending_agents
     if agents_to_run:
         phase2_graph = build_graph(agents_to_run)
         multi_state_output = phase2_graph.invoke(multi_state_output)
 
     # Save session
     session_state = multi_state_output["session"]
-    save_session(user_id, session_state.model_dump())
+    save_session(session_state.model_dump())
 
     # ---- Persist user messages into Chroma ----
     persist_user_messages_to_chroma(session_state)
-
+    # ---- Return final output ----
+    if "output" not in multi_state_output:
+        multi_state_output["output"] = combine_agent_responses(session_state)
     return multi_state_output
 
 

@@ -1,5 +1,5 @@
 from typing import Dict
-from typing import TypedDict, List
+from typing import TypedDict, Any
 from shared.session_model import SessionState
 
 class MultiAgentState(TypedDict):

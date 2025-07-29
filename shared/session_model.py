@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -30,6 +30,7 @@ class SessionState(BaseModel):
     intent: List[str] = Field(default_factory=list)
     input: Optional[str] = None
     similar_context: Optional[str] = None  # For context enrichment
+    agent_results: Optional[dict] = Field(default_factory=dict)  # store structured results
     workflow_complete: bool = False  # Indicates if the workflow is complete
 
     # ---------- Helper methods ----------
