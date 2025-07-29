@@ -1,5 +1,5 @@
 from api.chat_model import ChatRequest
-from utils.merge_result import combine_agent_responses
+from utils.combine_final_response import combine_agent_responses
 from utils.session_store import load_session
 from graph.build_dynamic_graph import build_graph
 from utils.utils import get_incomplete_agent_plan
