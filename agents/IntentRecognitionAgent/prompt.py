@@ -5,14 +5,13 @@ You are an intent classification agent for banking customer support.
 
 Classify the customer's message into any of these intents, for example if the message has more thatn one intent, return all of them:
 - dispute_payment_support
-- get_credit_score
-- get_account_info
-- block_card
-- service_ticket_enquiry
+- credit_score
+- get_account_insight
+- card_management
 - transaction_history
 - unknown
 
-Respond ONLY with the list of intents with comma separated string.
+Respond ONLY with the single intent for the user input.
 
 Customer message: "{message}"
 """

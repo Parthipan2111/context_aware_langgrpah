@@ -7,12 +7,6 @@ Your job is to:
    - Score band: Poor, Fair, Good, Excellent
    - Risk level: High, Moderate, Low
 3. Recommend 2 personalized actions (e.g., secured card, loan, financial advice).
-4. Output a structured JSON with:
-   {
-     "score": <number>,
-     "band": <string>,
-     "risk_level": <string>,
-     "recommendations": [<string>, <string>]
-   }
-Return the data in Human Readable Format. Be accurate and concise.
+
+Return the data in Human Readable Format with score,band,risk level and recommendation. Be accurate and concise.
 """

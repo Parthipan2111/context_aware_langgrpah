@@ -1,17 +1,31 @@
 from shared import MultiAgentState
 
 
-def get_incomplete_agent_plan(state: MultiAgentState) -> list[dict]:
+def start_or_resume(state: MultiAgentState) -> MultiAgentState:
     """
-    Returns a filtered list of agent dicts (name, mode) for agents
-    that have incomplete slot data, preserving their original modes.
+    Entry point for deciding whether to resume an incomplete agent flow
+    or start a new query. Now checks pending_agents and active_agent
+    inside the SessionState (state["session"]).
     """
-    pending_agents = state.get("pending_agents", [])
-    agent_state = state.get("agent_state", {})
+    session = state["session"]  # SessionState object
+    user_input = state["user_input"]
 
-    def is_incomplete(agent_name):
-        slots = agent_state.get(agent_name, {}).get("slots", {})
-        return any(v is None for v in slots.values())
+    # Check if there are any unfinished agents
+    if getattr(session, "pending_agents", []):
+        # Resume workflow for pending agents
+        session.add_message("system", f"Resuming pending agents: {[p.name if hasattr(p,'name') else p for p in session.pending_agents]}")
+        return state
 
-    # Preserve the mode from the original plan
-    return [agent for agent in pending_agents if is_incomplete(agent["name"])]
+    # Check if an active agent is set (single-agent scenario)
+    if getattr(session, "active_agent", None):
+        session.add_message("system",  f"Continuing with active agent: {session.active_agent}")
+        return state
+
+    # Otherwise, no pending work: proceed with context enrichment + intent recognition
+    session.add_message("system",  f"Starting new flow for input: {user_input}")
+    session.agent_state.clear()
+    session.pending_agents.clear()
+    session.agent_results.clear()
+    session.active_agent = None
+    return state
+

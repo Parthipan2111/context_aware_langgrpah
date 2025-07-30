@@ -33,12 +33,9 @@ def context_enrichment_agent(state) -> MultiAgentState:
     if similar_contexts:
         # Append to agent output
         for ctx in similar_contexts:
-            state["similar_context"] += f"- {ctx}\n"
+            session.similar_context = (session.similar_context or "") + f"- {ctx}\n"
+
 
         # Optionally, store as a system-level message in history
-        session.history.append(
-            {"role": "system", "content": f"Similar contexts: {similar_contexts}"}
-        )
-
-
+        session.add_message("system",f"Similar contexts: {similar_contexts}")
     return state

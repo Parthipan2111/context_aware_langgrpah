@@ -1,5 +1,8 @@
 # api/models.py
+from typing import List
 from pydantic import BaseModel, Field
+
+from shared.session_model import HistoryItem
 
 class ChatRequest(BaseModel):
     text: str = Field(..., description="User message text")
@@ -8,6 +11,6 @@ class ChatRequest(BaseModel):
     channel: str = Field(..., description="Channel identifier (e.g., 'web', 'mobile')")
 
 class ChatResponse(BaseModel):
-    response: str = Field(..., description="Chatbot response text")
+    agent_response: str = Field(..., description="Chatbot response text")
     user_id: str = Field(..., description="User ID")
-    context: dict = Field(..., description="Contextual information for the response")
+    history: List[HistoryItem] = Field(default_factory=list)

@@ -1,4 +1,4 @@
-from langchain.agents import Tool, initialize_agent, AgentType
+from langchain.agents import Tool
 from langchain_openai import ChatOpenAI
 from shared.MultiAgentState import MultiAgentState
 from .tools import get_credit_data, get_user_profile
@@ -6,8 +6,6 @@ from graph.build_dynamic_graph import register_agent
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain.agents import AgentExecutor, create_openai_functions_agent,Tool
 from shared.merge_result import safe_merge_agent_result
-
-
 from .prompt import CREDIT_SCORE_PROMPT
 
 
@@ -39,18 +37,24 @@ agent = create_openai_functions_agent(llm=llm, tools=tools, prompt=prompt)
 # 6. Initialize AgentExecutor
 credit_score_agent = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
+current_agent ="credit_score"
 
-@register_agent("credit_score_agent")
+@register_agent("credit_score")
 def credit_score_node(state) -> MultiAgentState:
     """
     Node for credit score analysis in the LangGraph workflow.
     This node fetches credit data, analyzes the score, and provides recommendations.
     """
-    user_id = state["user_id"]
-    
+    user_id = state["session"].user_id    
     # Run the agent with the user input
-    response = credit_score_agent.run(user_id)
+    response = credit_score_agent.invoke({"user_id":user_id})
+    final_output = response["output"]
     session = state["session"]
-    session.history.append({"role": "assistant", "content": response})
+    session.add_message("assistant", final_output)
+    session.pending_agents = [
+            a for a in session.pending_agents if a.name != current_agent
+        ]
+    if not session.pending_agents:
+            session.active_agent = None
     # Return the response as a structured output
-    return safe_merge_agent_result(state, "credit_score_agent", {"credit_score": response})
+    return safe_merge_agent_result(state, current_agent, final_output)

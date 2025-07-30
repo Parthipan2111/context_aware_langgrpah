@@ -16,7 +16,7 @@ def build_graph(agent_plan: List[Dict[str, str]]):
     last_sequential = None
 
     for agent in agent_plan:
-        name, mode = agent["name"], agent["mode"]
+        name, mode = agent.name, agent.mode
         if name not in AGENT_FUNCTIONS:
             raise ValueError(f"Agent {name} not registered.")
         workflow.add_node(name, AGENT_FUNCTIONS[name])
@@ -24,7 +24,7 @@ def build_graph(agent_plan: List[Dict[str, str]]):
     # Add edges based on the agent plan
 
     for i, agent in enumerate(agent_plan):
-        name, mode = agent["name"], agent["mode"]
+        name, mode = agent.name, agent.mode
 
         if not last_sequential:
             workflow.add_edge(START, name)  
@@ -40,8 +40,8 @@ def build_graph(agent_plan: List[Dict[str, str]]):
                 workflow.add_edge(last_sequential, name)
 
     for agent in agent_plan:
-        if agent["mode"] == "parallel":
-            workflow.add_edge(agent["name"], END)
+        if agent.name == "parallel":
+            workflow.add_edge(agent.name, END)
     if last_sequential:
         workflow.add_edge(last_sequential, END)
 

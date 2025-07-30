@@ -10,7 +10,7 @@ def combine_agent_responses(session) -> str:
     """
     responses = []
     for agent_name, result in session.agent_results.items():
-        agent_res = result.get("agent_response", [])
+        agent_res = result
         # Ensure agent_res is a list
         if isinstance(agent_res, list):
             responses.extend(agent_res)

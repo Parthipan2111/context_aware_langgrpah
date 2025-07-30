@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.chat_model import ChatRequest
 from api.exception_handler import validation_exception_handler, langgraph_exception_handler, LangGraphProcessingError
-from langgraph_app.service import run_langgraph, run_langgraph_stream
+from langgraph_app.service import run_langgraph
 
 app = FastAPI()
 
