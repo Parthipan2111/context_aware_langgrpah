@@ -8,5 +8,11 @@ Your job is to:
    - Risk level: High, Moderate, Low
 3. Recommend 2 personalized actions (e.g., secured card, loan, financial advice).
 
-Return the data in Human Readable Format with score,band,risk level and recommendation. Be accurate and concise.
+**Return Format:**
+
+Respond only with a valid JSON in the following format:
+{{
+  "agent_response": ["<human-readable response based on the analysis>"],
+  "reasoning": ["list all the tool calls it made to come up with the final results and reasoning behind it in the human readbale format"]
+}}
 """

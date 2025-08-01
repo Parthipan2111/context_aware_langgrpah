@@ -13,7 +13,9 @@ from graph.build_dynamic_graph import register_agent
 from shared import MultiAgentState, state
 from shared.merge_result import safe_merge_agent_result
 from .prompt import TRANSACTION_AGENT_PROMPT
-import json
+from shared.constants import AGENT_NAME_DICT
+
+current_agent = AGENT_NAME_DICT["TRANSACTION_HISTORY"]
 system_message = SystemMessagePromptTemplate.from_template(
     TRANSACTION_AGENT_PROMPT
 )
@@ -44,7 +46,6 @@ agent = create_openai_functions_agent(llm=llm, tools=tools, prompt=prompt)
 # 6. Initialize AgentExecutor
 transaction_history_agent = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-current_agent = "transaction_history"
 
 @register_agent(current_agent)
 def transaction_history(state: dict) -> MultiAgentState:
@@ -54,29 +55,15 @@ def transaction_history(state: dict) -> MultiAgentState:
     user_id = state["session"].user_id
     slots = state.get("agent_state", {}).get(current_agent, {}).get("slots", {})
 
-    # response = account_insight_agent.run(user_input)
-    final_output = """
-    {
-    "slots": {
-        "no_of_days": "5"
-    },
-    "agent_response": [
-        "Here is the analysis of your transaction history for the past 5 days:",
-        "- Total number of transactions: 8",
-        "- Debit transactions: 4, totaling 3,700",
-        "- Credit transactions: 4, totaling 79,000",
-        "- Date range of transactions: From 2025-07-13 to 2025-07-17"
-    ]
-    }
-    """
-    # response_dict = transaction_history_agent.invoke({"user_id": user_id, "user_input": user_input, "slots": slots})
-    # final_output = response_dict["output"]
-    slot_parsed,agent_response = parse_agent_response(final_output)
+    response_dict = transaction_history_agent.invoke({"user_id": user_id, "user_input": user_input, "slots": slots})
+    final_output = response_dict["output"]
+    slot_parsed,agent_response,reasoning = parse_agent_response(final_output)
     session = state["session"]
 # ---- Update slots in session.agent_state ----
     if slot_parsed:
-        all_filled = verify_slot(slot_parsed,current_agent,session)
-        if all_filled:
-          remove_pending_agent(current_agent,session)
+        verify_slot(slot_parsed,current_agent,session)
+    if reasoning:
+        session.reasoning[current_agent] = reasoning
+
     session.add_message("assistant", final_output)
     return safe_merge_agent_result(state, current_agent, agent_response)

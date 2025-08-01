@@ -21,7 +21,9 @@ Respond only with a valid JSON in the following format:
      "reason": "<reason>",
      "user_final_confirmation": "<yes/no>"
    }},
-  "agent_response": ["<human-friendly response based on the action>"]
+  "agent_response": ["<human-friendly response based on the action>"],
+  "reasoning": ["list all the tool calls it made to come up with the final results and reasoning behind it in the human readbale format"]
+
 }}
 
 """

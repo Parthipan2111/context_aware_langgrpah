@@ -1,4 +1,5 @@
 from api.chat_model import ChatRequest, ChatResponse
+from shared.MultiAgentState import MultiAgentState
 from shared.build_chat_response import build_chat_response
 from utils.combine_final_response import combine_agent_responses
 from utils.session_store import load_session
@@ -7,7 +8,8 @@ from utils.utils import start_or_resume
 from shared.init_graph_state import init_new_multi_agent_state
 from shared.session_model import PendingAgent, SessionState
 from vector_db.chroma_utils import persist_user_messages_to_chroma
-from agents.IntentRecognitionAgent.intent_recognition_agent import intent_recognition_node
+from others.intent_recognition_agent import intent_recognition_node
+from agents.IntentRecognitionAgent.intent_agent import intent_agent_node
 from agents.ContextEnrichmentAgent.context_enrich_agent import context_enrichment_agent
 from agents.CreditScoreAgent.credit_score_agent import credit_score_node
 from agents.TransactionHistoryAgent.transaction_history_agent import transaction_history
@@ -15,88 +17,11 @@ from agents.RouterAgent.router_node import update_state_with_agents
 from agents.DisputePaymentSupport.dispute_payment_support_agent import dispute_payment_support
 from agents.AccountInsightAgent.account_insight_agent import account_insight_node
 from agents.CardManagementAgent.card_management_node import card_management_node
+from agents.CSATAgent.csat_agent import csat_scoring_node
+from agents.HumanAgent.human_agent import human_agent_node
 from utils.session_store import save_session
+from shared.constants import AGENT_NAME_DICT
 
-
-
-# def run_langgraph(request: ChatRequest):
-#     """
-#     Execute the LangGraph pipeline.
-#     """
-#     user_id = request.user_id
-#     input_text = request.text
-#     session_id = request.session_id
-
-#     # ---- 0. Load session state ----
-#     state = load_session(user_id, session_id)
-
-#     if state:
-#         session_obj = SessionState(**state) if isinstance(state, dict) else state
-#         session_obj.history.append({"role": "user", "content": input_text})
-#         session_obj.input = input_text
-#         multi_state = {
-#             "session": session_obj,
-#             "user_input": input_text,
-#             "output": ""
-#         }
-#         updated_state = start_or_resume(multi_state)
-
-
-#     if not state:
-#         # New MultiAgentState (session + user_input + output)
-#         multi_state = init_new_multi_agent_state(user_id, session_id, input_text)
-#     else:
-#         # Existing: Wrap the restored SessionState in MultiAgentState
-#         session_obj = SessionState(**state) if isinstance(state, dict) else state
-#         session_obj.history.append({"role": "user", "content": input_text})
-#         session_obj.input = input_text
-#         multi_state = {
-#             "session": session_obj,
-#             "user_input": input_text,
-#             "output": ""
-#         }
-
-#     # ---- 1. Resume incomplete workflow if any ----
-#     updated_state = get_incomplete_agent_plan(multi_state)
-
-
-#     if not incomplete_plan and state:
-#         return combine_agent_responses(session_obj)
-
-#     if incomplete_plan:
-#         agents_to_run = [{"name": state["active_agent"], "mode": "sequential"}]
-#         graph = build_graph(agents_to_run)
-#         print(f"Resuming incomplete workflow: {incomplete_plan}")
-#         multi_state_output = graph.invoke(multi_state)
-
-#     else:
-#         multi_state = init_new_multi_agent_state(user_id, session_id, input_text)
-#             # ---- 2. Normal path: enrichment -> intent ----
-#         phase1_agents = [
-#             {"name": "context_enrichment_agent", "mode": "sequential"},
-#             {"name": "intent_agent", "mode": "sequential"}
-#         ]
-#         phase1_graph = build_graph(phase1_agents)
-#         print("Multi_state keys:", multi_state.keys())
-#         print("Multi_state type:", type(multi_state))
-#         multi_state_output = phase1_graph.invoke(multi_state)
-
-#     # ---- 3. Run downstream agents returned by intent ----
-#     agents_to_run = multi_state_output["session"].pending_agents
-#     if agents_to_run:
-#         phase2_graph = build_graph(agents_to_run)
-#         multi_state_output = phase2_graph.invoke(multi_state_output)
-
-#     # Save session
-#     session_state = multi_state_output["session"]
-#     save_session(session_state.model_dump())
-
-#     # ---- Persist user messages into Chroma ----
-#     persist_user_messages_to_chroma(session_state)
-#     # ---- Return final output ----
-#     if "output" not in multi_state_output:
-#         multi_state_output["output"] = combine_agent_responses(session_state)
-#     return multi_state_output
 
 def run_langgraph(request: ChatRequest)-> ChatResponse:
     """
@@ -148,14 +73,14 @@ def run_langgraph(request: ChatRequest)-> ChatResponse:
             print(f"Resuming active agent: {session.active_agent}")
 
         graph = build_graph(agents_to_run)
-        multi_state_output_final_phase = graph.invoke(updated_state)
+        multi_state_output_inter_phase = graph.invoke(updated_state)
 
     else:
         # ---- 3. No incomplete flow: Normal new flow ----
         phase1_agents = [
-            PendingAgent(name="context_enrichment_agent", mode="sequential"),
-            PendingAgent(name="intent_agent", mode="sequential"),
-            PendingAgent(name="router_node", mode="sequential")
+            PendingAgent(name=AGENT_NAME_DICT["CONTEXT_ENRICHMENT"], mode="sequential"),
+            PendingAgent(name=AGENT_NAME_DICT["INTENT_AGENT"], mode="sequential"),
+            PendingAgent(name=AGENT_NAME_DICT["ROUTER"], mode="sequential")
         ]
         phase1_graph = build_graph(phase1_agents)
         print("Multi_state keys:", updated_state.keys())
@@ -166,17 +91,29 @@ def run_langgraph(request: ChatRequest)-> ChatResponse:
         agents_to_run = multi_state_output["session"].pending_agents
         if agents_to_run:
             phase2_graph = build_graph(agents_to_run)
-            multi_state_output_final_phase = phase2_graph.invoke(multi_state_output)
+            multi_state_output_inter_phase = phase2_graph.invoke(multi_state_output)
+        
+    csat_session = multi_state_output_inter_phase["session"]
+    multi_state_output_final_phase = MultiAgentState()
+    if not csat_session.pending_agents and not csat_session.active_agent:
+        csat_agents = [
+            PendingAgent(name=AGENT_NAME_DICT["CSAT"], mode="sequential")]
+        csat_graph = build_graph(csat_agents)
+        multi_state_output_final_phase = csat_graph.invoke(multi_state_output_inter_phase)
+
+    if not multi_state_output_final_phase:
+        session_state =multi_state_output_inter_phase["session"]
+    else:
+        session_state =multi_state_output_final_phase["session"]
 
     # ---- 4. Persist updated session ----
-    session_state = multi_state_output_final_phase["session"]
-    save_session(session_state.model_dump())
+    save_session(session_state.model_dump())    
 
     # ---- 5. Persist user messages into Chroma ----
     persist_user_messages_to_chroma(session_state)
 
     # ---- 6. Final output ----
-    chat_response = build_chat_response(multi_state_output_final_phase)
+    chat_response = build_chat_response(session_state)
 
     return chat_response
 

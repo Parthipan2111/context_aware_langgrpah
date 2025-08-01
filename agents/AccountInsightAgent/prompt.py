@@ -12,5 +12,9 @@ Your job is to use the available tools to analyze an account for the {user_input
 
 **Return Format:**
 
-return the response in Human-readable text with account_health text after completing your full analysis.
+Respond only with a valid JSON in the following format:
+{{
+  "agent_response": ["<human-readable response based on the analysis>"],
+  "reasoning": ["list all the tool calls it made to come up with the final results and reasoning behind it in the human readbale format"]
+}}
 """

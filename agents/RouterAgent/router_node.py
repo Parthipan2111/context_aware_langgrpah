@@ -1,9 +1,11 @@
 from graph.build_dynamic_graph import register_agent
 from shared.MultiAgentState import MultiAgentState
 from shared.session_model import AgentSlots, SessionState,PendingAgent
+from shared.constants import AGENT_NAME_DICT
 
+current_agent = AGENT_NAME_DICT["ROUTER"]
 
-@register_agent("router_node")
+@register_agent(current_agent)
 def update_state_with_agents(state) -> MultiAgentState:
     """ Initialize the state for intent recognition.
     """
@@ -13,20 +15,22 @@ def update_state_with_agents(state) -> MultiAgentState:
     for intent in intents:
         # Initialize default slots depending on intent
         if intent not in session.agent_state:
-            if intent == "dispute_payment_support":
+            if intent == AGENT_NAME_DICT["DISPUTE_AGENT"]:
                 default_slots = {
                     "transaction_date": None,
                     "transaction_amount": None,
                     "user_final_confirmation": None,
                 }
-            elif intent == "card_management":
+            elif intent == AGENT_NAME_DICT["CARD_MANAGEMENT"]:
                 default_slots = {
                     "last_four_digits_card_number": None,
                     "reason": None,
                     "user_final_confirmation": None,
                 }
-            elif intent == "transaction_history":
+            elif intent == AGENT_NAME_DICT["TRANSACTION_HISTORY"]:
                 default_slots = {"no_of_days": None}
+            elif intent == "human_agent":
+                default_slots = {"user_closure_confirmation": None}
             else:
                 default_slots = {}
 

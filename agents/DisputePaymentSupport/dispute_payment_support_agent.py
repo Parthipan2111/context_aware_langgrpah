@@ -15,6 +15,9 @@ from .prompt import DISPUTE_PAYMENT_SUPPORT_AGENT_PROMPT
 from .tools import raise_dispute
 from shared.parse_agent_response import parse_agent_response
 import json
+from shared.constants import AGENT_NAME_DICT
+
+current_agent = AGENT_NAME_DICT["DISPUTE_AGENT"]
 system_message = SystemMessagePromptTemplate.from_template(
     DISPUTE_PAYMENT_SUPPORT_AGENT_PROMPT
 )
@@ -48,7 +51,6 @@ agent = create_openai_functions_agent(llm=llm, tools=tools, prompt=prompt)
 # 6. Initialize AgentExecutor
 dispute_payment_support_agent = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-current_agent = "dispute_payment_support"
 
 @register_agent(current_agent)
 def dispute_payment_support(state: dict) -> MultiAgentState:
@@ -61,22 +63,13 @@ def dispute_payment_support(state: dict) -> MultiAgentState:
 
     response_dict = dispute_payment_support_agent.invoke({"user_id": user_id, "user_input": user_input, "slots": slots})
     final_output = response_dict["output"]
-    # final_output = """
-    #         {
-    #         "slots": {
-    #             "transaction_date": "",
-    #             "transaction_amount": "50",
-    #             "user_final_confirmation": ""
-    #         },
-    #         "agent_response": [
-    #             "I understand you want to raise a dispute for a transaction of 50 dollars. Could you please provide the exact date of the transaction last week?"
-    #         ]
-    #         }
-    #     """
-    slot_parsed,agent_response = parse_agent_response(final_output)
+
+    slot_parsed,agent_response,reasoning = parse_agent_response(final_output)
 # ---- Update slots in session.agent_state ----
     if slot_parsed:
         verify_slot(slot_parsed,current_agent,session)
+    if reasoning:
+        session.reasoning[current_agent] = reasoning
     session.add_message("assistant", final_output)
 
     return safe_merge_agent_result(state, current_agent, agent_response)

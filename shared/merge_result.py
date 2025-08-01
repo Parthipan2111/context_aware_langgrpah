@@ -1,7 +1,7 @@
 import json
 
-from requests import session
 from shared.MultiAgentState import MultiAgentState
+from shared.trace import log_agent_steps
 
 
 def safe_merge_agent_result(state: MultiAgentState, agent_name: str, agent_response: list | str) -> MultiAgentState:
@@ -10,6 +10,8 @@ def safe_merge_agent_result(state: MultiAgentState, agent_name: str, agent_respo
     Expects agent_response to already be a list from the agent, not a dictionary.
     """
     session = state["session"]
+    input_string = state["user_input"]
+    explanation = session.reasoning
 
     # Ensure agent_results exists
     if not hasattr(session, "agent_results"):
@@ -23,4 +25,5 @@ def safe_merge_agent_result(state: MultiAgentState, agent_name: str, agent_respo
 
     # Save/merge
     session.agent_results[agent_name] = responses
+    log_agent_steps(session,agent_name,input_string,agent_response,explanation)
     return state

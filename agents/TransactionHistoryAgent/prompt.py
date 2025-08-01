@@ -23,7 +23,9 @@ Respond only with a valid JSON in the following format:
 {{
   "slots":
     {{"no_of_days": "<number of days identified from the user input>" }},
-  "agent_response": ["<human-readable response based on the analysis>"]
+    "agent_response": ["<human-readable response based on the analysis>"],
+    "reasoning": ["list all the tool calls it made to come up with the final results and reasoning behind it in the human readbale format"]
+
 }}
 
 """

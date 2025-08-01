@@ -8,7 +8,9 @@ from shared.parse_agent_response import parse_agent_response
 from shared.slot_utils import verify_slot
 from .prompt import CARD_MANAGEMENT_PROMPT
 from agents.CardManagementAgent.card_tools import get_user_cards, block_card, request_new_card, get_card_limit
+from shared.constants import AGENT_NAME_DICT
 
+current_agent = AGENT_NAME_DICT["CARD_MANAGEMENT"]
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 
 tools = [
@@ -36,9 +38,8 @@ agent = create_openai_functions_agent(llm=llm, tools=tools, prompt=prompt)
 # 6. Initialize AgentExecutor
 card_management_agent = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-current_agent= "card_management"
 
-@register_agent("card_management")
+@register_agent(current_agent)
 def card_management_node(state):
     """ Node for card management in the LangGraph workflow.
     This node handles card-related tasks such as blocking a card, requesting a new card, or checking card limits.
@@ -52,10 +53,13 @@ def card_management_node(state):
     response_dict = card_management_agent.invoke({"user_id": user_id, "user_input": user_input, "slots": slots})
     final_output = response_dict["output"]
 
-    slot_parsed,agent_response = parse_agent_response(final_output)
+    slot_parsed,agent_response,reasoning = parse_agent_response(final_output)
 # ---- Update slots in session.agent_state ----
     if slot_parsed:
         verify_slot(slot_parsed,current_agent,session)
+# ---- update the reason for the output  ----
+    if reasoning:
+        session.reasoning[current_agent] = reasoning
     session.add_message("assistant", final_output)
 
     return safe_merge_agent_result(state, current_agent, agent_response)

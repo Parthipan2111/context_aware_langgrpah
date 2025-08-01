@@ -22,7 +22,7 @@ class SessionState(BaseModel):
     user_id: Optional[str] = None  # Optional user ID for multi-user sessions
     active_agent: Optional[str] = None
     history: List[HistoryItem] = Field(default_factory=list)
-    global_slots: Dict[str, Optional[str]] = Field(default_factory=dict)
+    global_slots: Optional[dict] = Field(default_factory=dict)
     agent_state: Dict[str, AgentSlots] = Field(default_factory=dict)
 
     # Multi-agent planning
@@ -32,6 +32,7 @@ class SessionState(BaseModel):
     similar_context: Optional[str] = None  # For context enrichment
     agent_results: Optional[dict] = Field(default_factory=dict)  # store structured results
     workflow_complete: bool = False  # Indicates if the workflow is complete
+    reasoning: Optional[dict] = Field(default_factory=dict)  # store structured results
 
     # ---------- Helper methods ----------
 

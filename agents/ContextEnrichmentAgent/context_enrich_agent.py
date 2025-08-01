@@ -2,9 +2,11 @@ from graph.build_dynamic_graph import register_agent
 from shared.MultiAgentState import MultiAgentState
 from shared.session_model import SessionState
 from vector_db.chroma_utils import query_past_history
+from shared.constants import AGENT_NAME_DICT
 
+current_agent = AGENT_NAME_DICT["CONTEXT_ENRICHMENT"]
 
-@register_agent("context_enrichment_agent")
+@register_agent(current_agent)
 def context_enrichment_agent(state) -> MultiAgentState:
     """
     Queries Chroma for similar past messages and appends results to history and output.

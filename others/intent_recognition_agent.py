@@ -6,14 +6,14 @@ from langchain.prompts import PromptTemplate
 from graph.build_dynamic_graph import register_agent
 from shared import MultiAgentState
 from shared.session_model import AgentSlots, SessionState
-from .prompt import INTENT_PROMPT_TEMPLATE
+from agents.IntentRecognitionAgent.prompt import INTENT_PROMPT_TEMPLATE
 from langchain_groq import ChatGroq
 
 # Define or import GraphState
 from typing import Dict, Any
 
 
-@register_agent("intent_agent")
+@register_agent("intent_agent_test")
 def intent_recognition_node(state) -> MultiAgentState:
     """
     Node for intent recognition in the LangGraph workflow.
