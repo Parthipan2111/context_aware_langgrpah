@@ -13,5 +13,5 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     agent_response: str = Field(..., description="Chatbot response text")
     user_id: str = Field(..., description="User ID")
-    history: List[HistoryItem] = Field(default_factory=list)
-    scratchpad: Optional[str] = Field(None, description="Internal reasoning trace (agent_scratchpad)")
+    # history: List[HistoryItem] = Field(default_factory=list)
+    reasoning:  Optional[dict] = Field(default_factory=dict)
