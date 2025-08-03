@@ -10,9 +10,11 @@ def build_chat_response(session: SessionState) -> ChatResponse:
     """
     # Combine agent results into final response text
     final_response = combine_agent_responses(session)
+    reasoning: dict = session.reasoning
 
     return ChatResponse(
         agent_response=final_response,
         user_id=session.user_id,
-        history=session.history
+        reasoning=reasoning
+
     )

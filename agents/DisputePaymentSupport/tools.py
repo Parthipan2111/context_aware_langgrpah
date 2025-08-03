@@ -8,14 +8,14 @@ def get_recent_transactions(user_id) -> dict:
     """
 
     transaction_history = [
-        {"type": "debit", "amount": 50, "date": "2025-07-17"},
-        {"type": "credit", "amount": 15000, "date": "2025-07-16"},
-        {"type": "debit", "amount": 1000, "date": "2025-07-15"},
-        {"type": "credit", "amount": 32000, "date": "2025-07-14"},
-        {"type": "debit", "amount": 200, "date": "2025-07-13"},
-        {"type": "debit", "amount": 1000, "date": "2025-07-15"},
-        {"type": "credit", "amount": 32000, "date": "2025-07-14"},
-        {"type": "debit", "amount": 200, "date": "2025-07-13"}
+        {"type": "debit", "amount": 500, "date": "2025-07-17","remarks": "buying watch"},
+        {"type": "debit", "amount": 500, "date": "2025-07-17","remarks": "buying watch"},
+        {"type": "debit", "amount": 1000, "date": "2025-07-15","remarks": "electricity bill"},
+        {"type": "credit", "amount": 32000, "date": "2025-07-14","remarks": "salary credited"},
+        {"type": "debit", "amount": 200, "date": "2025-07-13","remarks": "buying grocery"},
+        {"type": "debit", "amount": 1000, "date": "2025-07-15","remarks": "internet bill"},
+        {"type": "credit", "amount": 32000, "date": "2025-07-14","remarks": "investmetn scheme"},
+        {"type": "debit", "amount": 200, "date": "2025-07-13","remarks": "buying watch"}
     ]
     return transaction_history
 

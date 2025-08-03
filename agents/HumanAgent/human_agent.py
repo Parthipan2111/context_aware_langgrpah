@@ -21,6 +21,12 @@ def human_agent_node(state) -> MultiAgentState:
 
     session.reasoning[current_agent] = "As per the query, the AI agent cannot resolve the issue, so I am stepping in to help the user"
 
+    session.pending_agents = [
+            a for a in session.pending_agents if a.name != current_agent
+        ]
+    if not session.pending_agents:
+            session.active_agent = None
+
     return safe_merge_agent_result(state, current_agent, agent_response)
 
     

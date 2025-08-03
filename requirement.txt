@@ -5,11 +5,8 @@ uvicorn[standard]==0.30.1
 # LangGraph
 langchain>=0.2.0
 langgraph>=0.0.38
-langchain-groq
 langchain-openai
 openai
-langchain_community
-langchain-perplexity
 
 
 chromadb
